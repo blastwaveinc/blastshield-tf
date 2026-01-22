@@ -1,0 +1,120 @@
+{# Macro to generate response mapping code #}
+{% macro response_mapping(fields, resp_var="resp", data_var="data", indent="\t") %}
+{% for f in fields %}
+{% if f.is_nested and f.is_list and f.nested_fields %}
+{{ indent }}if len({{ resp_var }}.{{ f.name }}) > 0 {
+{{ indent }}	{{ f.tf_name }}List := make([]attr.Value, len({{ resp_var }}.{{ f.name }}))
+{{ indent }}	for i, item := range {{ resp_var }}.{{ f.name }} {
+{{ indent }}		{{ f.tf_name }}List[i], _ = types.ObjectValue(
+{{ indent }}			map[string]attr.Type{
+{%- for nf in f.nested_fields %}
+{%- if nf.is_list %}
+"{{ nf.tf_name }}": types.SetType{ElemType: {{ nf.tf_element_type }}}{{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "String" %}
+"{{ nf.tf_name }}": types.StringType{{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "Int64" %}
+"{{ nf.tf_name }}": types.Int64Type{{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "Bool" %}
+"{{ nf.tf_name }}": types.BoolType{{ ", " if not loop.last else "" }}
+{%- endif %}
+{%- endfor %}
+},
+{{ indent }}			map[string]attr.Value{
+{%- for nf in f.nested_fields %}
+{%- if nf.is_list %}
+"{{ nf.tf_name }}": func() attr.Value { v, _ := types.SetValueFrom(ctx, {{ nf.tf_element_type }}, item.{{ nf.name }}); return v }(){{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "String" %}
+"{{ nf.tf_name }}": types.StringValue(item.{{ nf.name }}){{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "Int64" %}
+"{{ nf.tf_name }}": types.Int64Value(item.{{ nf.name }}){{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "Bool" %}
+"{{ nf.tf_name }}": types.BoolValue(item.{{ nf.name }}){{ ", " if not loop.last else "" }}
+{%- endif %}
+{%- endfor %}
+},
+{{ indent }}		)
+{{ indent }}	}
+{{ indent }}	{{ f.tf_name }}Val, diags := types.SetValue(types.ObjectType{AttrTypes: map[string]attr.Type{
+{%- for nf in f.nested_fields %}
+{%- if nf.is_list %}
+"{{ nf.tf_name }}": types.SetType{ElemType: {{ nf.tf_element_type }}}{{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "String" %}
+"{{ nf.tf_name }}": types.StringType{{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "Int64" %}
+"{{ nf.tf_name }}": types.Int64Type{{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "Bool" %}
+"{{ nf.tf_name }}": types.BoolType{{ ", " if not loop.last else "" }}
+{%- endif %}
+{%- endfor %}
+}}, {{ f.tf_name }}List)
+{{ indent }}	response.Diagnostics.Append(diags...)
+{{ indent }}	{{ data_var }}.{{ f.name }} = {{ f.tf_name }}Val
+{{ indent }}} else {
+{{ indent }}	{{ f.tf_name }}Val, diags := types.SetValue(types.ObjectType{AttrTypes: map[string]attr.Type{
+{%- for nf in f.nested_fields %}
+{%- if nf.is_list %}
+"{{ nf.tf_name }}": types.SetType{ElemType: {{ nf.tf_element_type }}}{{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "String" %}
+"{{ nf.tf_name }}": types.StringType{{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "Int64" %}
+"{{ nf.tf_name }}": types.Int64Type{{ ", " if not loop.last else "" }}
+{%- elif nf.tf_type == "Bool" %}
+"{{ nf.tf_name }}": types.BoolType{{ ", " if not loop.last else "" }}
+{%- endif %}
+{%- endfor %}
+}}, []attr.Value{})
+{{ indent }}	response.Diagnostics.Append(diags...)
+{{ indent }}	{{ data_var }}.{{ f.name }} = {{ f.tf_name }}Val
+{{ indent }}}
+{% elif f.is_nested %}
+{{ indent }}// TODO: Handle nested field {{ f.name }}
+{% elif f.is_pointer and not f.is_list and not f.is_map %}
+{{ indent }}if {{ resp_var }}.{{ f.name }} != nil {
+{% if f.tf_type == "String" %}
+{{ indent }}	{{ data_var }}.{{ f.name }} = types.StringValue(*{{ resp_var }}.{{ f.name }})
+{% elif f.tf_type == "Int64" %}
+{{ indent }}	{{ data_var }}.{{ f.name }} = types.Int64Value(*{{ resp_var }}.{{ f.name }})
+{% elif f.tf_type == "Bool" %}
+{{ indent }}	{{ data_var }}.{{ f.name }} = types.BoolValue(*{{ resp_var }}.{{ f.name }})
+{% endif %}
+{{ indent }}} else {
+{{ indent }}	{{ data_var }}.{{ f.name }} = types.{{ f.tf_type }}Null()
+{{ indent }}}
+{% elif f.is_list %}
+{% if f.tf_element_type == "types.StringType" %}
+{% set empty_slice = "[]string{}" %}
+{% elif f.tf_element_type == "types.Int64Type" %}
+{% set empty_slice = "[]int64{}" %}
+{% else %}
+{% set empty_slice = "[]string{}" %}
+{% endif %}
+{{ indent }}if len({{ resp_var }}.{{ f.name }}) > 0 {
+{{ indent }}	{{ f.tf_name }}Val, diags := types.SetValueFrom(ctx, {{ f.tf_element_type }}, {{ resp_var }}.{{ f.name }})
+{{ indent }}	response.Diagnostics.Append(diags...)
+{{ indent }}	{{ data_var }}.{{ f.name }} = {{ f.tf_name }}Val
+{{ indent }}} else {
+{{ indent }}	{{ f.tf_name }}Val, diags := types.SetValueFrom(ctx, {{ f.tf_element_type }}, {{ empty_slice }})
+{{ indent }}	response.Diagnostics.Append(diags...)
+{{ indent }}	{{ data_var }}.{{ f.name }} = {{ f.tf_name }}Val
+{{ indent }}}
+{% elif f.is_map %}
+{{ indent }}if {{ resp_var }}.{{ f.name }} != nil && len({{ resp_var }}.{{ f.name }}) > 0 {
+{{ indent }}	{{ f.tf_name }}Val, diags := types.MapValueFrom(ctx, {{ f.tf_element_type }}, {{ resp_var }}.{{ f.name }})
+{{ indent }}	response.Diagnostics.Append(diags...)
+{{ indent }}	{{ data_var }}.{{ f.name }} = {{ f.tf_name }}Val
+{{ indent }}} else {
+{{ indent }}	{{ f.tf_name }}Val, diags := types.MapValueFrom(ctx, {{ f.tf_element_type }}, map[string]string{})
+{{ indent }}	response.Diagnostics.Append(diags...)
+{{ indent }}	{{ data_var }}.{{ f.name }} = {{ f.tf_name }}Val
+{{ indent }}}
+{% else %}
+{% if f.tf_type == "String" %}
+{{ indent }}{{ data_var }}.{{ f.name }} = types.StringValue({{ resp_var }}.{{ f.name }})
+{% elif f.tf_type == "Int64" %}
+{{ indent }}{{ data_var }}.{{ f.name }} = types.Int64Value({{ resp_var }}.{{ f.name }})
+{% elif f.tf_type == "Bool" %}
+{{ indent }}{{ data_var }}.{{ f.name }} = types.BoolValue({{ resp_var }}.{{ f.name }})
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endmacro %}
