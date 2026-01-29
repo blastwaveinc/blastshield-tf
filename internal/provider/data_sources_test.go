@@ -21,15 +21,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-// Node data sources
+// Node data sources - V1.12 Tests (without tags)
 
-func TestAccNodeDataSource_basic(t *testing.T) {
+func TestAccNodeDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNodeDataSourceConfig(),
+				Config: testAccNodeDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_node.test", "id"),
 					resource.TestCheckResourceAttr("data.blastshield_node.test", "name", "test-node-ds"),
@@ -40,13 +42,15 @@ func TestAccNodeDataSource_basic(t *testing.T) {
 	})
 }
 
-func TestAccNodesDataSource_basic(t *testing.T) {
+func TestAccNodesDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNodesDataSourceConfig(),
+				Config: testAccNodesDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_nodes.all", "nodes.#"),
 				),
@@ -55,7 +59,74 @@ func TestAccNodesDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccNodeDataSourceConfig() string {
+func testAccNodeDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_node" "test" {
+  name       = "test-node-ds"
+  node_type  = "A"
+  api_access = false
+}
+
+data "blastshield_node" "test" {
+  id = blastshield_node.test.id
+}
+`
+}
+
+func testAccNodesDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_node" "test" {
+  name       = "test-node-ds-list"
+  node_type  = "A"
+  api_access = false
+}
+
+data "blastshield_nodes" "all" {
+  depends_on = [blastshield_node.test]
+}
+`
+}
+
+// Node data sources - V1.13 Tests (with tags)
+
+func TestAccNodeDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccNodeDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_node.test", "id"),
+					resource.TestCheckResourceAttr("data.blastshield_node.test", "name", "test-node-ds"),
+					resource.TestCheckResourceAttr("data.blastshield_node.test", "node_type", "A"),
+					resource.TestCheckResourceAttr("data.blastshield_node.test", "tags.test", TestTag),
+				),
+			},
+		},
+	})
+}
+
+func TestAccNodesDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccNodesDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_nodes.all", "nodes.#"),
+				),
+			},
+		},
+	})
+}
+
+func testAccNodeDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_node" "test" {
   name       = "test-node-ds"
@@ -72,7 +143,7 @@ data "blastshield_node" "test" {
 `, TestTag)
 }
 
-func testAccNodesDataSourceConfig() string {
+func testAccNodesDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_node" "test" {
   name       = "test-node-ds-list"
@@ -89,15 +160,17 @@ data "blastshield_nodes" "all" {
 `, TestTag)
 }
 
-// Group data sources
+// Group data sources - V1.12 Tests (without tags)
 
-func TestAccGroupDataSource_basic(t *testing.T) {
+func TestAccGroupDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGroupDataSourceConfig(),
+				Config: testAccGroupDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_group.test", "id"),
 					resource.TestCheckResourceAttr("data.blastshield_group.test", "name", "test-group-ds"),
@@ -107,13 +180,15 @@ func TestAccGroupDataSource_basic(t *testing.T) {
 	})
 }
 
-func TestAccGroupsDataSource_basic(t *testing.T) {
+func TestAccGroupsDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGroupsDataSourceConfig(),
+				Config: testAccGroupsDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_groups.all", "groups.#"),
 				),
@@ -122,7 +197,73 @@ func TestAccGroupsDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccGroupDataSourceConfig() string {
+func testAccGroupDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_group" "test" {
+  name      = "test-group-ds"
+  users     = []
+  endpoints = []
+}
+
+data "blastshield_group" "test" {
+  id = blastshield_group.test.id
+}
+`
+}
+
+func testAccGroupsDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_group" "test" {
+  name      = "test-group-ds-list"
+  users     = []
+  endpoints = []
+}
+
+data "blastshield_groups" "all" {
+  depends_on = [blastshield_group.test]
+}
+`
+}
+
+// Group data sources - V1.13 Tests (with tags)
+
+func TestAccGroupDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccGroupDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_group.test", "id"),
+					resource.TestCheckResourceAttr("data.blastshield_group.test", "name", "test-group-ds"),
+					resource.TestCheckResourceAttr("data.blastshield_group.test", "tags.test", TestTag),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGroupsDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccGroupsDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_groups.all", "groups.#"),
+				),
+			},
+		},
+	})
+}
+
+func testAccGroupDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_group" "test" {
   name = "test-group-ds"
@@ -139,7 +280,7 @@ data "blastshield_group" "test" {
 `, TestTag)
 }
 
-func testAccGroupsDataSourceConfig() string {
+func testAccGroupsDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_group" "test" {
   name = "test-group-ds-list"
@@ -156,15 +297,17 @@ data "blastshield_groups" "all" {
 `, TestTag)
 }
 
-// Service data sources
+// Service data sources - V1.12 Tests (without tags)
 
-func TestAccServiceDataSource_basic(t *testing.T) {
+func TestAccServiceDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccServiceDataSourceConfig(),
+				Config: testAccServiceDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_service.test", "id"),
 					resource.TestCheckResourceAttr("data.blastshield_service.test", "name", "test-service-ds"),
@@ -174,13 +317,15 @@ func TestAccServiceDataSource_basic(t *testing.T) {
 	})
 }
 
-func TestAccServicesDataSource_basic(t *testing.T) {
+func TestAccServicesDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccServicesDataSourceConfig(),
+				Config: testAccServicesDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_services.all", "services.#"),
 				),
@@ -189,7 +334,81 @@ func TestAccServicesDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccServiceDataSourceConfig() string {
+func testAccServiceDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_service" "test" {
+  name = "test-service-ds"
+  protocols = [
+    {
+      ip_protocol = 6
+      ports       = ["8080"]
+    }
+  ]
+}
+
+data "blastshield_service" "test" {
+  id = blastshield_service.test.id
+}
+`
+}
+
+func testAccServicesDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_service" "test" {
+  name = "test-service-ds-list"
+  protocols = [
+    {
+      ip_protocol = 6
+      ports       = ["8081"]
+    }
+  ]
+}
+
+data "blastshield_services" "all" {
+  depends_on = [blastshield_service.test]
+}
+`
+}
+
+// Service data sources - V1.13 Tests (with tags)
+
+func TestAccServiceDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccServiceDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_service.test", "id"),
+					resource.TestCheckResourceAttr("data.blastshield_service.test", "name", "test-service-ds"),
+					resource.TestCheckResourceAttr("data.blastshield_service.test", "tags.test", TestTag),
+				),
+			},
+		},
+	})
+}
+
+func TestAccServicesDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccServicesDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_services.all", "services.#"),
+				),
+			},
+		},
+	})
+}
+
+func testAccServiceDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_service" "test" {
   name = "test-service-ds"
@@ -210,7 +429,7 @@ data "blastshield_service" "test" {
 `, TestTag)
 }
 
-func testAccServicesDataSourceConfig() string {
+func testAccServicesDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_service" "test" {
   name = "test-service-ds-list"
@@ -231,15 +450,17 @@ data "blastshield_services" "all" {
 `, TestTag)
 }
 
-// Policy data sources
+// Policy data sources - V1.12 Tests (without tags)
 
-func TestAccPolicyDataSource_basic(t *testing.T) {
+func TestAccPolicyDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccPolicyDataSourceConfig(),
+				Config: testAccPolicyDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_policy.test", "id"),
 					resource.TestCheckResourceAttr("data.blastshield_policy.test", "name", "test-policy-ds"),
@@ -249,13 +470,15 @@ func TestAccPolicyDataSource_basic(t *testing.T) {
 	})
 }
 
-func TestAccPoliciesDataSource_basic(t *testing.T) {
+func TestAccPoliciesDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccPoliciesDataSourceConfig(),
+				Config: testAccPoliciesDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_policies.all", "policies.#"),
 				),
@@ -264,7 +487,123 @@ func TestAccPoliciesDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccPolicyDataSourceConfig() string {
+func testAccPolicyDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_group" "from" {
+  name      = "test-policy-ds-from"
+  users     = []
+  endpoints = []
+}
+
+resource "blastshield_group" "to" {
+  name      = "test-policy-ds-to"
+  users     = []
+  endpoints = []
+}
+
+resource "blastshield_service" "test" {
+  name = "test-policy-ds-svc"
+  protocols = [
+    {
+      ip_protocol = 6
+      ports       = ["443"]
+    }
+  ]
+}
+
+resource "blastshield_policy" "test" {
+  name        = "test-policy-ds"
+  enabled     = true
+  log         = false
+  from_groups = [blastshield_group.from.id]
+  to_groups   = [blastshield_group.to.id]
+  services    = [blastshield_service.test.id]
+}
+
+data "blastshield_policy" "test" {
+  id = blastshield_policy.test.id
+}
+`
+}
+
+func testAccPoliciesDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_group" "from" {
+  name      = "test-policy-ds-list-from"
+  users     = []
+  endpoints = []
+}
+
+resource "blastshield_group" "to" {
+  name      = "test-policy-ds-list-to"
+  users     = []
+  endpoints = []
+}
+
+resource "blastshield_service" "test" {
+  name = "test-policy-ds-list-svc"
+  protocols = [
+    {
+      ip_protocol = 6
+      ports       = ["444"]
+    }
+  ]
+}
+
+resource "blastshield_policy" "test" {
+  name        = "test-policy-ds-list"
+  enabled     = true
+  log         = false
+  from_groups = [blastshield_group.from.id]
+  to_groups   = [blastshield_group.to.id]
+  services    = [blastshield_service.test.id]
+}
+
+data "blastshield_policies" "all" {
+  depends_on = [blastshield_policy.test]
+}
+`
+}
+
+// Policy data sources - V1.13 Tests (with tags)
+
+func TestAccPolicyDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPolicyDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_policy.test", "id"),
+					resource.TestCheckResourceAttr("data.blastshield_policy.test", "name", "test-policy-ds"),
+					resource.TestCheckResourceAttr("data.blastshield_policy.test", "tags.test", TestTag),
+				),
+			},
+		},
+	})
+}
+
+func TestAccPoliciesDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPoliciesDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_policies.all", "policies.#"),
+				),
+			},
+		},
+	})
+}
+
+func testAccPolicyDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_group" "from" {
   name = "test-policy-ds-from"
@@ -315,7 +654,7 @@ data "blastshield_policy" "test" {
 `, TestTag)
 }
 
-func testAccPoliciesDataSourceConfig() string {
+func testAccPoliciesDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_group" "from" {
   name = "test-policy-ds-list-from"
@@ -366,15 +705,17 @@ data "blastshield_policies" "all" {
 `, TestTag)
 }
 
-// Egress Policy data sources
+// Egress Policy data sources - V1.12 Tests (without tags)
 
-func TestAccEgressPolicyDataSource_basic(t *testing.T) {
+func TestAccEgressPolicyDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccEgressPolicyDataSourceConfig(),
+				Config: testAccEgressPolicyDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_egresspolicy.test", "id"),
 					resource.TestCheckResourceAttr("data.blastshield_egresspolicy.test", "name", "test-egress-ds"),
@@ -384,13 +725,15 @@ func TestAccEgressPolicyDataSource_basic(t *testing.T) {
 	})
 }
 
-func TestAccEgressPoliciesDataSource_basic(t *testing.T) {
+func TestAccEgressPoliciesDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccEgressPoliciesDataSourceConfig(),
+				Config: testAccEgressPoliciesDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_egresspolicies.all", "egresspolicies.#"),
 				),
@@ -399,7 +742,113 @@ func TestAccEgressPoliciesDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccEgressPolicyDataSourceConfig() string {
+func testAccEgressPolicyDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_group" "test" {
+  name      = "test-egress-ds-group"
+  users     = []
+  endpoints = []
+}
+
+resource "blastshield_service" "test" {
+  name = "test-egress-ds-svc"
+  protocols = [
+    {
+      ip_protocol = 6
+      ports       = ["443"]
+    }
+  ]
+}
+
+resource "blastshield_egresspolicy" "test" {
+  name                  = "test-egress-ds"
+  enabled               = true
+  allow_all_dns_queries = false
+  groups                = [blastshield_group.test.id]
+  services              = [blastshield_service.test.id]
+  destinations          = []
+  dns_names             = []
+}
+
+data "blastshield_egresspolicy" "test" {
+  id = blastshield_egresspolicy.test.id
+}
+`
+}
+
+func testAccEgressPoliciesDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_group" "test" {
+  name      = "test-egress-ds-list-group"
+  users     = []
+  endpoints = []
+}
+
+resource "blastshield_service" "test" {
+  name = "test-egress-ds-list-svc"
+  protocols = [
+    {
+      ip_protocol = 6
+      ports       = ["443"]
+    }
+  ]
+}
+
+resource "blastshield_egresspolicy" "test" {
+  name                  = "test-egress-ds-list"
+  enabled               = true
+  allow_all_dns_queries = false
+  groups                = [blastshield_group.test.id]
+  services              = [blastshield_service.test.id]
+  destinations          = []
+  dns_names             = []
+}
+
+data "blastshield_egresspolicies" "all" {
+  depends_on = [blastshield_egresspolicy.test]
+}
+`
+}
+
+// Egress Policy data sources - V1.13 Tests (with tags)
+
+func TestAccEgressPolicyDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccEgressPolicyDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_egresspolicy.test", "id"),
+					resource.TestCheckResourceAttr("data.blastshield_egresspolicy.test", "name", "test-egress-ds"),
+					resource.TestCheckResourceAttr("data.blastshield_egresspolicy.test", "tags.test", TestTag),
+				),
+			},
+		},
+	})
+}
+
+func TestAccEgressPoliciesDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccEgressPoliciesDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_egresspolicies.all", "egresspolicies.#"),
+				),
+			},
+		},
+	})
+}
+
+func testAccEgressPolicyDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_group" "test" {
   name = "test-egress-ds-group"
@@ -442,7 +891,7 @@ data "blastshield_egresspolicy" "test" {
 `, TestTag)
 }
 
-func testAccEgressPoliciesDataSourceConfig() string {
+func testAccEgressPoliciesDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_group" "test" {
   name = "test-egress-ds-list-group"
@@ -485,15 +934,17 @@ data "blastshield_egresspolicies" "all" {
 `, TestTag)
 }
 
-// Proxy data sources
+// Proxy data sources - V1.12 Tests (without tags)
 
-func TestAccProxyDataSource_basic(t *testing.T) {
+func TestAccProxyDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccProxyDataSourceConfig(),
+				Config: testAccProxyDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_proxy.test", "id"),
 					resource.TestCheckResourceAttr("data.blastshield_proxy.test", "name", "test-proxy-ds"),
@@ -503,13 +954,15 @@ func TestAccProxyDataSource_basic(t *testing.T) {
 	})
 }
 
-func TestAccProxiesDataSource_basic(t *testing.T) {
+func TestAccProxiesDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccProxiesDataSourceConfig(),
+				Config: testAccProxiesDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_proxies.all", "proxies.#"),
 				),
@@ -518,7 +971,69 @@ func TestAccProxiesDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccProxyDataSourceConfig() string {
+func testAccProxyDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_proxy" "test" {
+  name = "test-proxy-ds"
+}
+
+data "blastshield_proxy" "test" {
+  id = blastshield_proxy.test.id
+}
+`
+}
+
+func testAccProxiesDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_proxy" "test" {
+  name = "test-proxy-ds-list"
+}
+
+data "blastshield_proxies" "all" {
+  depends_on = [blastshield_proxy.test]
+}
+`
+}
+
+// Proxy data sources - V1.13 Tests (with tags)
+
+func TestAccProxyDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccProxyDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_proxy.test", "id"),
+					resource.TestCheckResourceAttr("data.blastshield_proxy.test", "name", "test-proxy-ds"),
+					resource.TestCheckResourceAttr("data.blastshield_proxy.test", "tags.test", TestTag),
+				),
+			},
+		},
+	})
+}
+
+func TestAccProxiesDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccProxiesDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_proxies.all", "proxies.#"),
+				),
+			},
+		},
+	})
+}
+
+func testAccProxyDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_proxy" "test" {
   name = "test-proxy-ds"
@@ -533,7 +1048,7 @@ data "blastshield_proxy" "test" {
 `, TestTag)
 }
 
-func testAccProxiesDataSourceConfig() string {
+func testAccProxiesDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_proxy" "test" {
   name = "test-proxy-ds-list"
@@ -548,15 +1063,17 @@ data "blastshield_proxies" "all" {
 `, TestTag)
 }
 
-// Event Log Rule data sources
+// Event Log Rule data sources - V1.12 Tests (without tags or apply_to_groups)
 
-func TestAccEventLogRuleDataSource_basic(t *testing.T) {
+func TestAccEventLogRuleDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccEventLogRuleDataSourceConfig(),
+				Config: testAccEventLogRuleDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_eventlogrule.test", "id"),
 					resource.TestCheckResourceAttr("data.blastshield_eventlogrule.test", "name", "test-eventlogrule-ds"),
@@ -566,13 +1083,15 @@ func TestAccEventLogRuleDataSource_basic(t *testing.T) {
 	})
 }
 
-func TestAccEventLogRulesDataSource_basic(t *testing.T) {
+func TestAccEventLogRulesDataSource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccEventLogRulesDataSourceConfig(),
+				Config: testAccEventLogRulesDataSourceConfig_v112(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.blastshield_eventlogrules.all", "eventlogrules.#"),
 				),
@@ -581,7 +1100,87 @@ func TestAccEventLogRulesDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccEventLogRuleDataSourceConfig() string {
+func testAccEventLogRuleDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_eventlogrule" "test" {
+  name    = "test-eventlogrule-ds"
+  enabled = true
+  conditions = [
+    {
+      condition_type = "category"
+      operator       = "eq"
+      value          = "security"
+    }
+  ]
+  actions = ["email-notification"]
+}
+
+data "blastshield_eventlogrule" "test" {
+  id = blastshield_eventlogrule.test.id
+}
+`
+}
+
+func testAccEventLogRulesDataSourceConfig_v112() string {
+	return testAccProviderConfig() + `
+resource "blastshield_eventlogrule" "test" {
+  name    = "test-eventlogrule-ds-list"
+  enabled = true
+  conditions = [
+    {
+      condition_type = "category"
+      operator       = "eq"
+      value          = "security"
+    }
+  ]
+  actions = ["email-notification"]
+}
+
+data "blastshield_eventlogrules" "all" {
+  depends_on = [blastshield_eventlogrule.test]
+}
+`
+}
+
+// Event Log Rule data sources - V1.13 Tests (with tags and apply_to_groups)
+
+func TestAccEventLogRuleDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccEventLogRuleDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_eventlogrule.test", "id"),
+					resource.TestCheckResourceAttr("data.blastshield_eventlogrule.test", "name", "test-eventlogrule-ds"),
+					resource.TestCheckResourceAttr("data.blastshield_eventlogrule.test", "tags.test", TestTag),
+				),
+			},
+		},
+	})
+}
+
+func TestAccEventLogRulesDataSource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccEventLogRulesDataSourceConfig_v113(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.blastshield_eventlogrules.all", "eventlogrules.#"),
+				),
+			},
+		},
+	})
+}
+
+func testAccEventLogRuleDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_eventlogrule" "test" {
   name    = "test-eventlogrule-ds"
@@ -606,7 +1205,7 @@ data "blastshield_eventlogrule" "test" {
 `, TestTag)
 }
 
-func testAccEventLogRulesDataSourceConfig() string {
+func testAccEventLogRulesDataSourceConfig_v113() string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_eventlogrule" "test" {
   name    = "test-eventlogrule-ds-list"
