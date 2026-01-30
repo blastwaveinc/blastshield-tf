@@ -21,14 +21,112 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccGroupResource_basic(t *testing.T) {
+// V1.12 Tests (without tags)
+
+func TestAccGroupResource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccGroupResourceConfig("test-group-1"),
+				Config: testAccGroupResourceConfig_v112("test-group-1"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_group.test", "name", "test-group-1"),
+					resource.TestCheckResourceAttrSet("blastshield_group.test", "id"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "blastshield_group.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update and Read testing
+			{
+				Config: testAccGroupResourceConfig_v112("test-group-1-updated"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_group.test", "name", "test-group-1-updated"),
+				),
+			},
+			// Delete testing automatically occurs in TestCase
+		},
+	})
+}
+
+func TestAccGroupResource_withEndpoints_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccGroupResourceConfigWithEndpoints_v112("test-group-endpoints"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_group.test", "name", "test-group-endpoints"),
+					resource.TestCheckResourceAttr("blastshield_group.test", "endpoints.#", "1"),
+				),
+				// The endpoint's groups field is updated automatically when added to a group,
+				// which causes a non-empty plan. We expect this refresh-only change.
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+func testAccGroupResourceConfig_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_group" "test" {
+  name      = %[1]q
+  users     = []
+  endpoints = []
+}
+`, name)
+}
+
+func testAccGroupResourceConfigWithEndpoints_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_node" "test_gateway" {
+  name          = "group-test-gateway"
+  node_type     = "G"  # Gateway
+  endpoint_mode = "N"  # NAT mode
+}
+
+resource "blastshield_endpoint" "test" {
+  name     = "group-test-endpoint"
+  node_id  = blastshield_node.test_gateway.id
+  endpoint = "192.168.2.100"
+  enabled  = true
+}
+
+resource "blastshield_group" "test" {
+  name = %[1]q
+  users = []
+  endpoints = [
+    {
+      id      = blastshield_endpoint.test.id
+      expires = 0
+    }
+  ]
+}
+`, name)
+}
+
+// V1.13 Tests (with tags)
+
+func TestAccGroupResource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create and Read testing
+			{
+				Config: testAccGroupResourceConfig_v113("test-group-1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_group.test", "name", "test-group-1"),
 					resource.TestCheckResourceAttrSet("blastshield_group.test", "id"),
@@ -43,9 +141,10 @@ func TestAccGroupResource_basic(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: testAccGroupResourceConfig("test-group-1-updated"),
+				Config: testAccGroupResourceConfig_v113("test-group-1-updated"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_group.test", "name", "test-group-1-updated"),
+					resource.TestCheckResourceAttr("blastshield_group.test", "tags.test", TestTag),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -53,16 +152,19 @@ func TestAccGroupResource_basic(t *testing.T) {
 	})
 }
 
-func TestAccGroupResource_withEndpoints(t *testing.T) {
+func TestAccGroupResource_withEndpoints_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGroupResourceConfigWithEndpoints("test-group-endpoints"),
+				Config: testAccGroupResourceConfigWithEndpoints_v113("test-group-endpoints"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_group.test", "name", "test-group-endpoints"),
 					resource.TestCheckResourceAttr("blastshield_group.test", "endpoints.#", "1"),
+					resource.TestCheckResourceAttr("blastshield_group.test", "tags.test", TestTag),
 				),
 				// The endpoint's groups field is updated automatically when added to a group,
 				// which causes a non-empty plan. We expect this refresh-only change.
@@ -72,7 +174,7 @@ func TestAccGroupResource_withEndpoints(t *testing.T) {
 	})
 }
 
-func testAccGroupResourceConfig(name string) string {
+func testAccGroupResourceConfig_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_group" "test" {
   name = %[1]q
@@ -85,7 +187,7 @@ resource "blastshield_group" "test" {
 `, name, TestTag)
 }
 
-func testAccGroupResourceConfigWithEndpoints(name string) string {
+func testAccGroupResourceConfigWithEndpoints_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_node" "test_gateway" {
   name          = "group-test-gateway"

@@ -21,14 +21,107 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccProxyResource_basic(t *testing.T) {
+// V1.12 Tests (without tags)
+
+func TestAccProxyResource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccProxyResourceConfig("test-proxy-1"),
+				Config: testAccProxyResourceConfig_v112("test-proxy-1"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_proxy.test", "name", "test-proxy-1"),
+					resource.TestCheckResourceAttrSet("blastshield_proxy.test", "id"),
+					resource.TestCheckResourceAttrSet("blastshield_proxy.test", "proxy_port"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "blastshield_proxy.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update and Read testing
+			{
+				Config: testAccProxyResourceConfigUpdated_v112("test-proxy-1-updated"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_proxy.test", "name", "test-proxy-1-updated"),
+					resource.TestCheckResourceAttr("blastshield_proxy.test", "domains.#", "2"),
+				),
+			},
+			// Delete testing automatically occurs in TestCase
+		},
+	})
+}
+
+func TestAccProxyResource_withGroups_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccProxyResourceConfigWithGroups_v112("test-proxy-groups"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_proxy.groups", "name", "test-proxy-groups"),
+					resource.TestCheckResourceAttr("blastshield_proxy.groups", "groups.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func testAccProxyResourceConfig_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_proxy" "test" {
+  name    = %[1]q
+  domains = ["example.com"]
+}
+`, name)
+}
+
+func testAccProxyResourceConfigUpdated_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_proxy" "test" {
+  name    = %[1]q
+  domains = ["example.com", "test.example.com"]
+}
+`, name)
+}
+
+func testAccProxyResourceConfigWithGroups_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_group" "proxy_group" {
+  name      = "proxy-test-group"
+  users     = []
+  endpoints = []
+}
+
+resource "blastshield_proxy" "groups" {
+  name    = %[1]q
+  domains = ["proxy.example.com"]
+  groups  = [blastshield_group.proxy_group.id]
+}
+`, name)
+}
+
+// V1.13 Tests (with tags)
+
+func TestAccProxyResource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create and Read testing
+			{
+				Config: testAccProxyResourceConfig_v113("test-proxy-1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_proxy.test", "name", "test-proxy-1"),
 					resource.TestCheckResourceAttrSet("blastshield_proxy.test", "id"),
@@ -44,10 +137,11 @@ func TestAccProxyResource_basic(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: testAccProxyResourceConfigUpdated("test-proxy-1-updated"),
+				Config: testAccProxyResourceConfigUpdated_v113("test-proxy-1-updated"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_proxy.test", "name", "test-proxy-1-updated"),
 					resource.TestCheckResourceAttr("blastshield_proxy.test", "domains.#", "2"),
+					resource.TestCheckResourceAttr("blastshield_proxy.test", "tags.test", TestTag),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -55,23 +149,26 @@ func TestAccProxyResource_basic(t *testing.T) {
 	})
 }
 
-func TestAccProxyResource_withGroups(t *testing.T) {
+func TestAccProxyResource_withGroups_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccProxyResourceConfigWithGroups("test-proxy-groups"),
+				Config: testAccProxyResourceConfigWithGroups_v113("test-proxy-groups"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_proxy.groups", "name", "test-proxy-groups"),
 					resource.TestCheckResourceAttr("blastshield_proxy.groups", "groups.#", "1"),
+					resource.TestCheckResourceAttr("blastshield_proxy.groups", "tags.test", TestTag),
 				),
 			},
 		},
 	})
 }
 
-func testAccProxyResourceConfig(name string) string {
+func testAccProxyResourceConfig_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_proxy" "test" {
   name    = %[1]q
@@ -83,7 +180,7 @@ resource "blastshield_proxy" "test" {
 `, name, TestTag)
 }
 
-func testAccProxyResourceConfigUpdated(name string) string {
+func testAccProxyResourceConfigUpdated_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_proxy" "test" {
   name    = %[1]q
@@ -95,7 +192,7 @@ resource "blastshield_proxy" "test" {
 `, name, TestTag)
 }
 
-func testAccProxyResourceConfigWithGroups(name string) string {
+func testAccProxyResourceConfigWithGroups_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_group" "proxy_group" {
   name = "proxy-test-group"

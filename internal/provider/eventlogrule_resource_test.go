@@ -21,14 +21,138 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccEventLogRuleResource_basic(t *testing.T) {
+// V1.12 Tests (without tags and apply_to_groups support)
+
+func TestAccEventLogRuleResource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccEventLogRuleResourceConfig("test-eventlogrule-1"),
+				Config: testAccEventLogRuleResourceConfig_v112("test-eventlogrule-1"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "name", "test-eventlogrule-1"),
+					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "enabled", "true"),
+					resource.TestCheckResourceAttrSet("blastshield_eventlogrule.test", "id"),
+					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "conditions.#", "1"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "blastshield_eventlogrule.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update and Read testing
+			{
+				Config: testAccEventLogRuleResourceConfigUpdated_v112("test-eventlogrule-1-updated"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "name", "test-eventlogrule-1-updated"),
+					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "enabled", "false"),
+					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "conditions.#", "2"),
+				),
+			},
+			// Delete testing automatically occurs in TestCase
+		},
+	})
+}
+
+func TestAccEventLogRuleResource_withEmailRecipients_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccEventLogRuleResourceConfigWithEmail_v112("test-eventlogrule-email"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_eventlogrule.email", "name", "test-eventlogrule-email"),
+					resource.TestCheckResourceAttr("blastshield_eventlogrule.email", "email_recipients.#", "2"),
+				),
+			},
+		},
+	})
+}
+
+func testAccEventLogRuleResourceConfig_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_eventlogrule" "test" {
+  name    = %[1]q
+  enabled = true
+  conditions = [
+    {
+      condition_type = "category"
+      operator       = "eq"
+      value          = "security"
+    }
+  ]
+  actions = ["email-notification"]
+}
+`, name)
+}
+
+func testAccEventLogRuleResourceConfigUpdated_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_eventlogrule" "test" {
+  name    = %[1]q
+  enabled = false
+  conditions = [
+    {
+      condition_type = "category"
+      operator       = "eq"
+      value          = "security"
+    },
+    {
+      condition_type = "priority"
+      operator       = "gt"
+      value          = "5"
+    }
+  ]
+  actions = ["email-notification"]
+}
+`, name)
+}
+
+func testAccEventLogRuleResourceConfigWithEmail_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_group" "eventlog_group" {
+  name      = "eventlog-test-group"
+  users     = []
+  endpoints = []
+}
+
+resource "blastshield_eventlogrule" "email" {
+  name             = %[1]q
+  enabled          = true
+  conditions = [
+    {
+      condition_type = "category"
+      operator       = "eq"
+      value          = "security"
+    }
+  ]
+  actions          = ["email-notification"]
+  email_recipients = ["admin@example.com", "security@example.com"]
+}
+`, name)
+}
+
+// V1.13 Tests (with tags and apply_to_groups support)
+
+func TestAccEventLogRuleResource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create and Read testing
+			{
+				Config: testAccEventLogRuleResourceConfig_v113("test-eventlogrule-1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "name", "test-eventlogrule-1"),
 					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "enabled", "true"),
@@ -45,11 +169,12 @@ func TestAccEventLogRuleResource_basic(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: testAccEventLogRuleResourceConfigUpdated("test-eventlogrule-1-updated"),
+				Config: testAccEventLogRuleResourceConfigUpdated_v113("test-eventlogrule-1-updated"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "name", "test-eventlogrule-1-updated"),
 					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "enabled", "false"),
 					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "conditions.#", "2"),
+					resource.TestCheckResourceAttr("blastshield_eventlogrule.test", "tags.test", TestTag),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -57,23 +182,26 @@ func TestAccEventLogRuleResource_basic(t *testing.T) {
 	})
 }
 
-func TestAccEventLogRuleResource_withEmailRecipients(t *testing.T) {
+func TestAccEventLogRuleResource_withEmailRecipients_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccEventLogRuleResourceConfigWithEmail("test-eventlogrule-email"),
+				Config: testAccEventLogRuleResourceConfigWithEmail_v113("test-eventlogrule-email"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_eventlogrule.email", "name", "test-eventlogrule-email"),
 					resource.TestCheckResourceAttr("blastshield_eventlogrule.email", "email_recipients.#", "2"),
+					resource.TestCheckResourceAttr("blastshield_eventlogrule.email", "tags.test", TestTag),
 				),
 			},
 		},
 	})
 }
 
-func testAccEventLogRuleResourceConfig(name string) string {
+func testAccEventLogRuleResourceConfig_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_eventlogrule" "test" {
   name    = %[1]q
@@ -94,7 +222,7 @@ resource "blastshield_eventlogrule" "test" {
 `, name, TestTag)
 }
 
-func testAccEventLogRuleResourceConfigUpdated(name string) string {
+func testAccEventLogRuleResourceConfigUpdated_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_eventlogrule" "test" {
   name    = %[1]q
@@ -120,7 +248,7 @@ resource "blastshield_eventlogrule" "test" {
 `, name, TestTag)
 }
 
-func testAccEventLogRuleResourceConfigWithEmail(name string) string {
+func testAccEventLogRuleResourceConfigWithEmail_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_group" "eventlog_group" {
   name = "eventlog-test-group"

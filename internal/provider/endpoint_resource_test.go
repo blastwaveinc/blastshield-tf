@@ -21,14 +21,90 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccEndpointResource_basic(t *testing.T) {
+// V1.12 Tests (without tags)
+
+func TestAccEndpointResource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccEndpointResourceConfig("test-endpoint-1"),
+				Config: testAccEndpointResourceConfig_v112("test-endpoint-1"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_endpoint.test", "name", "test-endpoint-1"),
+					resource.TestCheckResourceAttr("blastshield_endpoint.test", "enabled", "true"),
+					resource.TestCheckResourceAttrSet("blastshield_endpoint.test", "id"),
+					resource.TestCheckResourceAttrSet("blastshield_endpoint.test", "node_id"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "blastshield_endpoint.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update and Read testing
+			{
+				Config: testAccEndpointResourceConfigUpdated_v112("test-endpoint-1-updated"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_endpoint.test", "name", "test-endpoint-1-updated"),
+					resource.TestCheckResourceAttr("blastshield_endpoint.test", "enabled", "false"),
+				),
+			},
+			// Delete testing automatically occurs in TestCase
+		},
+	})
+}
+
+func testAccEndpointResourceConfig_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_node" "test_gateway" {
+  name          = "endpoint-test-gateway"
+  node_type     = "G"  # Gateway
+  endpoint_mode = "N"  # NAT mode
+}
+
+resource "blastshield_endpoint" "test" {
+  name     = %[1]q
+  node_id  = blastshield_node.test_gateway.id
+  endpoint = "192.168.1.100"  # Required for enabled endpoints in NAT mode
+  enabled  = true
+}
+`, name)
+}
+
+func testAccEndpointResourceConfigUpdated_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_node" "test_gateway" {
+  name          = "endpoint-test-gateway"
+  node_type     = "G"  # Gateway
+  endpoint_mode = "N"  # NAT mode
+}
+
+resource "blastshield_endpoint" "test" {
+  name     = %[1]q
+  node_id  = blastshield_node.test_gateway.id
+  endpoint = "192.168.1.101"  # Updated endpoint address
+  enabled  = false
+}
+`, name)
+}
+
+// V1.13 Tests (with tags)
+
+func TestAccEndpointResource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create and Read testing
+			{
+				Config: testAccEndpointResourceConfig_v113("test-endpoint-1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_endpoint.test", "name", "test-endpoint-1"),
 					resource.TestCheckResourceAttr("blastshield_endpoint.test", "enabled", "true"),
@@ -45,10 +121,11 @@ func TestAccEndpointResource_basic(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: testAccEndpointResourceConfigUpdated("test-endpoint-1-updated"),
+				Config: testAccEndpointResourceConfigUpdated_v113("test-endpoint-1-updated"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_endpoint.test", "name", "test-endpoint-1-updated"),
 					resource.TestCheckResourceAttr("blastshield_endpoint.test", "enabled", "false"),
+					resource.TestCheckResourceAttr("blastshield_endpoint.test", "tags.test", TestTag),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -56,7 +133,7 @@ func TestAccEndpointResource_basic(t *testing.T) {
 	})
 }
 
-func testAccEndpointResourceConfig(name string) string {
+func testAccEndpointResourceConfig_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_node" "test_gateway" {
   name          = "endpoint-test-gateway"
@@ -79,7 +156,7 @@ resource "blastshield_endpoint" "test" {
 `, name, TestTag)
 }
 
-func testAccEndpointResourceConfigUpdated(name string) string {
+func testAccEndpointResourceConfigUpdated_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_node" "test_gateway" {
   name          = "endpoint-test-gateway"

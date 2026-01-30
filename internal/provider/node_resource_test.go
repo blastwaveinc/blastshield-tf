@@ -21,14 +21,96 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccNodeResource_basic(t *testing.T) {
+// V1.12 Tests (without tags support)
+
+func TestAccNodeResource_basic_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccNodeResourceConfig("test-node-1"),
+				Config: testAccNodeResourceConfig_v112("test-node-1"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_node.test", "name", "test-node-1"),
+					resource.TestCheckResourceAttr("blastshield_node.test", "node_type", "A"),
+					resource.TestCheckResourceAttrSet("blastshield_node.test", "id"),
+					resource.TestCheckResourceAttrSet("blastshield_node.test", "invitation"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:            "blastshield_node.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"invitation"}, // invitation is only returned on create
+			},
+			// Update and Read testing
+			{
+				Config: testAccNodeResourceConfig_v112("test-node-1-updated"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_node.test", "name", "test-node-1-updated"),
+					resource.TestCheckResourceAttr("blastshield_node.test", "node_type", "A"),
+				),
+			},
+			// Delete testing automatically occurs in TestCase
+		},
+	})
+}
+
+func TestAccNodeResource_gateway_v112(t *testing.T) {
+	skipIfAPIVersionGreaterOrEqual(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccNodeResourceGatewayConfig_v112("test-gateway-1"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("blastshield_node.gateway", "name", "test-gateway-1"),
+					resource.TestCheckResourceAttr("blastshield_node.gateway", "node_type", "G"),
+					resource.TestCheckResourceAttrSet("blastshield_node.gateway", "id"),
+				),
+			},
+		},
+	})
+}
+
+func testAccNodeResourceConfig_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_node" "test" {
+  name       = %[1]q
+  node_type  = "A"  # Agent
+  api_access = false
+}
+`, name)
+}
+
+func testAccNodeResourceGatewayConfig_v112(name string) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "blastshield_node" "gateway" {
+  name          = %[1]q
+  node_type     = "G"  # Gateway
+  endpoint_mode = "N"  # NAT mode
+}
+`, name)
+}
+
+// V1.13 Tests (with tags support)
+
+func TestAccNodeResource_basic_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create and Read testing
+			{
+				Config: testAccNodeResourceConfig_v113("test-node-1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_node.test", "name", "test-node-1"),
 					resource.TestCheckResourceAttr("blastshield_node.test", "node_type", "A"),
@@ -46,10 +128,11 @@ func TestAccNodeResource_basic(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: testAccNodeResourceConfig("test-node-1-updated"),
+				Config: testAccNodeResourceConfig_v113("test-node-1-updated"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_node.test", "name", "test-node-1-updated"),
 					resource.TestCheckResourceAttr("blastshield_node.test", "node_type", "A"),
+					resource.TestCheckResourceAttr("blastshield_node.test", "tags.test", TestTag),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -57,24 +140,27 @@ func TestAccNodeResource_basic(t *testing.T) {
 	})
 }
 
-func TestAccNodeResource_gateway(t *testing.T) {
+func TestAccNodeResource_gateway_v113(t *testing.T) {
+	skipIfAPIVersionLessThan(t, "1.13.0")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNodeResourceGatewayConfig("test-gateway-1"),
+				Config: testAccNodeResourceGatewayConfig_v113("test-gateway-1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("blastshield_node.gateway", "name", "test-gateway-1"),
 					resource.TestCheckResourceAttr("blastshield_node.gateway", "node_type", "G"),
 					resource.TestCheckResourceAttrSet("blastshield_node.gateway", "id"),
+					resource.TestCheckResourceAttr("blastshield_node.gateway", "tags.test", TestTag),
 				),
 			},
 		},
 	})
 }
 
-func testAccNodeResourceConfig(name string) string {
+func testAccNodeResourceConfig_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_node" "test" {
   name       = %[1]q
@@ -87,7 +173,7 @@ resource "blastshield_node" "test" {
 `, name, TestTag)
 }
 
-func testAccNodeResourceGatewayConfig(name string) string {
+func testAccNodeResourceGatewayConfig_v113(name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "blastshield_node" "gateway" {
   name          = %[1]q
