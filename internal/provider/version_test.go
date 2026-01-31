@@ -31,17 +31,25 @@ var (
 	apiVersionFetchError error
 )
 
-// getAPIVersion reads the API version from the local openapi.json file
+// getAPIVersion reads the API version from the local openapi spec file
 // It caches the result to avoid multiple file reads during test runs
+// If OPENAPI_VERSION env var is set, it uses that spec file, otherwise uses openapi/latest.json
 func getAPIVersion() (string, error) {
 	apiVersionOnce.Do(func() {
-		// Find openapi.json - should be in project root
-		// We're in internal/provider, so go up two directories
-		openapiPath := filepath.Join("..", "..", "openapi.json")
+		// Check if OPENAPI_VERSION env var is set (e.g., from Doppler or make)
+		// This ensures tests use the same version that the provider was built with
+		specVersion := os.Getenv("OPENAPI_VERSION")
+		if specVersion == "" {
+			specVersion = "latest"
+		}
+
+		// Find openapi spec - we're in internal/provider, so go up two directories
+		// Note: specVersion already includes 'v' prefix (e.g., "v1.11.4" or "latest")
+		openapiPath := filepath.Join("..", "..", "openapi", specVersion+".json")
 
 		data, err := os.ReadFile(openapiPath)
 		if err != nil {
-			apiVersionFetchError = fmt.Errorf("failed to read openapi.json: %w", err)
+			apiVersionFetchError = fmt.Errorf("failed to read openapi spec: %w", err)
 			return
 		}
 
@@ -53,12 +61,12 @@ func getAPIVersion() (string, error) {
 		}
 
 		if err := json.Unmarshal(data, &openapi); err != nil {
-			apiVersionFetchError = fmt.Errorf("failed to parse openapi.json: %w", err)
+			apiVersionFetchError = fmt.Errorf("failed to parse openapi spec: %w", err)
 			return
 		}
 
 		if openapi.Info.Version == "" {
-			apiVersionFetchError = fmt.Errorf("version not found in openapi.json")
+			apiVersionFetchError = fmt.Errorf("version not found in openapi spec")
 			return
 		}
 
@@ -94,7 +102,7 @@ func skipIfAPIVersionLessThan(t *testing.T, requiredVersion string) {
 	}
 
 	if apiVersion.LessThan(required) {
-		t.Skipf("Test requires API version >= %s, but openapi.json version is %s", requiredVersion, apiVersionStr)
+		t.Skipf("Test requires API version >= %s, but current API version is %s", requiredVersion, apiVersionStr)
 	}
 }
 
@@ -124,31 +132,6 @@ func skipIfAPIVersionGreaterOrEqual(t *testing.T, thresholdVersion string) {
 	}
 
 	if apiVersion.GreaterThanOrEqual(threshold) {
-		t.Skipf("Test is for API version < %s, but openapi.json version is %s", thresholdVersion, apiVersionStr)
-	}
-}
-
-// requireAPIVersion fails the test if the API version doesn't match the requirement
-// This is stricter than skipIfAPIVersionLessThan and will fail rather than skip
-func requireAPIVersion(t *testing.T, requiredVersion string) {
-	t.Helper()
-
-	apiVersionStr, err := getAPIVersion()
-	if err != nil {
-		t.Fatalf("Could not determine API version: %v", err)
-	}
-
-	apiVersion, err := version.NewVersion(apiVersionStr)
-	if err != nil {
-		t.Fatalf("Could not parse API version %s: %v", apiVersionStr, err)
-	}
-
-	required, err := version.NewVersion(requiredVersion)
-	if err != nil {
-		t.Fatalf("Could not parse required version %s: %v", requiredVersion, err)
-	}
-
-	if apiVersion.LessThan(required) {
-		t.Fatalf("Test requires API version >= %s, but openapi.json version is %s", requiredVersion, apiVersionStr)
+		t.Skipf("Test is for API version < %s, but current API version is %s", thresholdVersion, apiVersionStr)
 	}
 }

@@ -16,15 +16,28 @@ Terraform provider for managing [Blastshield](https://blastwave.com) resources.
 git clone https://github.com/blastwaveinc/blastshield-tf.git
 cd blastshield-tf
 
-# Replace openapi.json with the version matching your BlastShield environment
-# You can export it from your Blastshield orchestrator at https://<orchestrator_hostname>:8000/openapi.json
-cp /path/to/your/openapi.json .
+# The provider supports multiple API versions
+# By default, it builds from openapi/latest.json (currently v1.13)
 
 # Build and install
 make install
 ```
 
 This will generate the provider code from the OpenAPI spec, build the binary, and install it to your local Terraform plugins directory.
+
+### Building for a Specific API Version
+
+If you need to build for a specific Blastshield API version (after `make fetch-openapi`):
+
+```bash
+# Build for v1.13
+make generate OPENAPI_VERSION=v1.13
+make build
+
+# Build for v1.14 (when available)
+make generate OPENAPI_VERSION=v1.14
+make build
+```
 
 ## Configuration
 
@@ -205,6 +218,9 @@ The provider code is generated from an OpenAPI specification using Jinja2 templa
 # Generate code from OpenAPI spec (creates a temporary Python venv)
 make generate
 
+# Generate for a specific API version
+make generate OPENAPI_VERSION=v1.13
+
 # Build the provider
 make build
 
@@ -215,12 +231,40 @@ make testacc
 make clean
 ```
 
+### API Version Management
+
+This provider supports multiple Blastshield API versions. OpenAPI specifications are stored in the `openapi/` directory:
+
+```
+openapi/
+├── v1.13.json          # API v1.13 specification
+├── latest.json         # Symlink to current version
+└── README.md           # Versioning guide
+```
+
+**Downloading a new API version:**
+
+```bash
+# Automatically downloads and names file based on version in spec
+make fetch-openapi BLASTSHIELD_HOST=https://orchestrator.example.com:8000
+
+# Update symlink if this is the latest version
+cd openapi && ln -sf v1.14.json latest.json
+
+# Generate and test
+make generate OPENAPI_VERSION=v1.14
+make build
+make test
+```
+
 ### Project Structure
 
 ```
 .
 ├── generate.py              # Code generator script
-├── openapi.json             # OpenAPI spec (replace with your version)
+├── openapi/                 # OpenAPI specifications
+│   ├── v1.13.json          # Versioned specs
+│   └── latest.json         # Symlink to current
 ├── codegen-templates/       # Jinja2 templates for Go code generation
 │   ├── client.go.j2
 │   ├── data_source.go.j2
@@ -237,14 +281,80 @@ make clean
 └── examples/                # Example Terraform configurations
 ```
 
-### Updating the OpenAPI Spec
+### Testing
 
-When your Blastshield environment is updated, regenerate the provider:
+```bash
+# Test API connectivity
+make test-api
 
-1. Export the new OpenAPI spec from your orchestrator
-2. Replace `openapi.json` with the new version
-3. Run `make clean && make build`
-4. Run `make testacc` to verify the changes
+# Run unit tests
+make test
+
+# Run acceptance tests (requires live API)
+make testacc
+
+# Run tests for a specific resource
+make testacc-node
+```
+
+### Releases and Versioning
+
+This provider uses **semantic versioning** that matches the Blastshield API version it supports.
+
+**Provider Version = API Version**
+- Provider `v1.13.0` → Built from Blastshield API `v1.13` OpenAPI spec
+- Provider `v1.14.0` → Built from Blastshield API `v1.14` OpenAPI spec
+
+**What gets committed to Git:**
+- Source code (generator, templates, client)
+- OpenAPI specifications (`openapi/v*.json`)
+- Tests
+- **NOT** generated code (`internal/provider/generated/` is in `.gitignore`)
+
+**Release Process:**
+
+1. Download new API version spec:
+   ```bash
+   make fetch-openapi BLASTSHIELD_HOST=https://orchestrator.example.com:8000
+   ```
+
+2. Update symlink to use the new version:
+   ```bash
+   cd openapi && ln -sf v1.14.0.json latest.json
+   ```
+
+3. Test the provider (VERSION is automatically extracted from spec):
+   ```bash
+   make clean
+   make build
+   make test
+   make testacc
+   ```
+
+4. Tag and push the release:
+   ```bash
+   git tag v1.14.0
+   git push origin v1.14.0
+   ```
+
+5. GitHub Actions (or registry publish process) builds binaries for all platforms and publishes to the Terraform Registry
+
+**Note:** The provider VERSION is automatically derived from the `info.version` field in the OpenAPI spec. No manual version updates needed!
+
+**Using the provider in Terraform:**
+
+```hcl
+terraform {
+  required_providers {
+    blastshield = {
+      source  = "blastwaveinc/blastshield"
+      version = "~> 1.13.0"  # Matches Blastshield API v1.13
+    }
+  }
+}
+```
+
+The `~>` constraint allows automatic updates to patch versions (e.g., `1.13.1`, `1.13.2`) but not minor versions (`1.14.0`).
 
 ## License
 
