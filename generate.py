@@ -432,8 +432,17 @@ def find_resources(spec: dict) -> list[ResourceInfo]:
 
 
 def main():
+    import argparse
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Generate Terraform provider code from OpenAPI spec')
+    parser.add_argument('--spec', default='openapi/latest.json',
+                       help='Path to OpenAPI spec (default: openapi/latest.json)')
+    args = parser.parse_args()
+
     # Load OpenAPI spec
-    with open("openapi.json") as f:
+    print(f"Loading OpenAPI spec from {args.spec}...")
+    with open(args.spec) as f:
         spec = json.load(f)
 
     # Find resources
@@ -531,7 +540,7 @@ def main():
             f.write(content)
         print(f"Generated {path}")
 
-    print("\nDone! Generated files are in:", OUTPUT_DIR)
+    print(f"\nDone! Generated files are in: {OUTPUT_DIR}")
 
 
 if __name__ == "__main__":
