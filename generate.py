@@ -480,6 +480,10 @@ def main():
                 if f.nested_ref not in nested_types:
                     nested_types[f.nested_ref] = f.nested_fields
 
+    # Check if resources have tags (for test generation)
+    for r in resources:
+        r.has_tags = any(f.json_name == "tags" for f in r.create_fields)
+
     # Generate shared files
     has_groups = any(r.has_groups for r in resources)
     generated_files = [
@@ -488,6 +492,8 @@ def main():
         ("client.go.j2", os.path.join(output_dir, "client.go"), {"package_name": package_name}),
         ("helpers.go.j2", os.path.join(output_dir, "helpers.go"), {"has_groups": has_groups, "package_name": package_name}),
         ("register.go.j2", os.path.join(output_dir, "register.go"), {"resources": resources, "api_version": api_version, "package_name": package_name}),
+        ("test_helpers.go.j2", os.path.join(output_dir, "test_helpers_test.go"), {"package_name": package_name}),
+        ("resource_test.go.j2", os.path.join(output_dir, "resources_test.go"), {"resources": resources, "package_name": package_name}),
     ]
     for template_name, output_path, context in generated_files:
         template = env.get_template(template_name)

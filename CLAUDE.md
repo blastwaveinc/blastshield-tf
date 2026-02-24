@@ -42,6 +42,8 @@ python3 generate.py --spec <path> --output-dir <path> --package <name>
 - `register.go` - Version registration via `init()` + `VersionProvider` type
 - `*_resource.go` - Resource implementations (CRUD operations)
 - `*_data_source.go` - Data source implementations (singular and plural)
+- `test_helpers_test.go` - Test configuration and helper functions
+- `resources_test.go` - Basic acceptance tests for all resources
 
 **Other generated files:**
 
@@ -99,16 +101,116 @@ make generate
 # Build the provider
 go build ./...
 
-# Run tests
+# Run unit tests
 go test ./...
+
+# Run all acceptance tests (requires running API server)
+make testacc
+
+# Run acceptance tests for a specific resource
+make testacc-Node
+
+# Run acceptance tests for a specific version
+make testacc-version-v1_13_0
+
+# Run acceptance tests for a specific resource in a specific version
+make testacc-version-v1_13_0-resource-Node
 ```
 
 ## Adding a New API Version
 
+### Option 1: Fetch from Remote Server
+
+```bash
+# Set your API credentials
+export BLASTSHIELD_HOST=https://your-api-server.com
+export BLASTSHIELD_TOKEN=your-token
+
+# Fetch the OpenAPI spec (automatically saved to openapi-specs/{version}.json)
+make fetch-openapi
+
+# Generate code for all versions including the new one
+make generate
+
+# Build
+go build ./...
+```
+
+### Option 2: Manual Placement
+
 1. Place the new OpenAPI spec in `openapi-specs/` (e.g., `1.14.0.json`)
-2. Run `make generate` — this creates `internal/provider/v1_14_0/` and updates imports
+2. Run `make generate` — this creates `internal/provider/v1_14_0/` with all code and tests
 3. `go build ./...` — the new version is compiled into the binary
 4. At runtime, the provider will automatically select it when appropriate
+5. Tests are generated automatically but can be customized for version-specific features
+
+## Testing Strategy
+
+### Version-Specific Tests
+
+Each API version package includes auto-generated acceptance tests in `resources_test.go`. These tests:
+- Are specific to that API version's schema and features
+- Run against a live API server
+- Use the `TestTag` constant to mark test entities for cleanup
+- Include basic CRUD operations and import testing
+
+### Running Tests
+
+```bash
+# Run all tests
+make testacc
+
+# Run tests for a specific version only
+make testacc-version-v1_13_0
+
+# Run tests for a specific resource across all versions
+make testacc-Node
+
+# Run tests for a specific resource in a specific version
+make testacc-version-v1_13_0-resource-Node
+```
+
+### Test Configuration
+
+Tests require:
+- `BLASTSHIELD_HOST` environment variable (defaults to `http://localhost:4999`)
+- `BLASTSHIELD_TOKEN` environment variable (defaults to `dev`)
+- `TF_ACC=1` environment variable to enable acceptance tests
+
+### Cleaning Up Test Resources
+
+After test failures, dangling resources may remain in the API. Clean them up with:
+
+```bash
+# First, preview what will be deleted (dry run)
+make cleanup-test-entities-dryrun
+
+# Then, delete the test entities (with confirmation prompt)
+make cleanup-test-entities
+```
+
+The dry run will show:
+- All test entities found (ID and name)
+- Organized by resource type
+- No deletions performed
+
+The cleanup will:
+- Prompt for confirmation before deleting
+- Query all resource types for entities tagged with `blastshield_tf_testing_entity`
+- Delete each found entity
+- Work across all resource types (nodes, endpoints, groups, services, policies, etc.)
+- Show progress as it deletes
+
+**Requirements**: `curl` and `jq` must be installed
+
+**Note**: Both commands use the same `BLASTSHIELD_HOST` and `BLASTSHIELD_TOKEN` environment variables as the tests.
+
+### Customizing Generated Tests
+
+The generated tests provide basic coverage. For version-specific features:
+1. Tests are generated from templates in `codegen-templates/`
+2. Add version-specific test cases manually in the version package
+3. Generated tests include tags support automatically (when available in the API version)
 
 ## Key Design Decisions
 
