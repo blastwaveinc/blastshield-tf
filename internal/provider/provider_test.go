@@ -18,8 +18,11 @@ import (
 	"os"
 	"testing"
 
+	"github.com/blastwaveinc/blastshield-tf/internal/provider/versions"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+
+	_ "github.com/blastwaveinc/blastshield-tf/internal/provider/versionimports"
 )
 
 const (
@@ -35,8 +38,13 @@ const (
 // acceptance testing. The factory function will be invoked for every Terraform
 // CLI command executed to create a provider server to which the CLI can
 // reattach.
+func testVersionedProvider() versions.VersionedProvider {
+	vp, _ := versions.LatestVersion()
+	return vp
+}
+
 var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	"blastshield": providerserver.NewProtocol6WithError(New("test")()),
+	"blastshield": providerserver.NewProtocol6WithError(New("test", testVersionedProvider())()),
 }
 
 func testAccPreCheck(t *testing.T) {

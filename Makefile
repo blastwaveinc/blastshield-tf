@@ -39,17 +39,19 @@ testacc-%:
 	BLASTSHIELD_HOST=$(BLASTSHIELD_HOST) BLASTSHIELD_TOKEN=$(BLASTSHIELD_TOKEN) \
 		TF_ACC=1 go test -v ./internal/provider/... -run 'TestAcc$*' -timeout 30m
 
-# Download OpenAPI spec from the Blastshield orchestrator
-fetch-openapi:
-	@curl -s "$(BLASTSHIELD_HOST)/openapi.json" -o openapi.json && \
-		echo "Successfully downloaded openapi.json from $(BLASTSHIELD_HOST)" && \
-		echo 'Note: You may need to manually modify the "version" field to reflect your API version for testing'
-
-# Generate code from OpenAPI spec
+# Generate code from all OpenAPI specs in openapi-specs/
 generate:
 	python3 -m venv .venv
 	.venv/bin/pip install --quiet jinja2
-	.venv/bin/python generate.py
+	@for spec in openapi-specs/*.json; do \
+		version=$$(python3 -c "import json; print(json.load(open('$$spec'))['info']['version'])"); \
+		pkg_name=v$$(echo "$$version" | tr '.' '_'); \
+		echo "Generating $$pkg_name from $$spec (API version $$version)"; \
+		.venv/bin/python generate.py --spec "$$spec" \
+			--output-dir "internal/provider/$$pkg_name" \
+			--package "$$pkg_name"; \
+	done
+	.venv/bin/python generate_imports.py
 	rm -rf .venv
 
 fmt:
@@ -65,8 +67,8 @@ docs: build
 clean:
 	rm -f ${BINARY}
 	rm -rf bin/
-	rm -rf internal/provider/generated/
-	rm -f internal/provider/provider.go
+	rm -rf internal/provider/v*/
+	rm -rf internal/provider/versionimports/
 
 # Cleanup test entities from the API (useful after test failures)
 # Requires curl and jq to be installed
@@ -75,4 +77,4 @@ cleanup-test-entities:
 	@echo "This requires a running API server and proper authentication."
 	@echo "Set BLASTSHIELD_HOST and BLASTSHIELD_TOKEN environment variables if needed."
 
-.PHONY: build release install test testacc fetch-openapi generate fmt lint docs clean cleanup-test-entities
+.PHONY: build release install test testacc generate fmt lint docs clean cleanup-test-entities
