@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "FastAPI",
-    "version": "0.1.0"
+    "title": "blastshield",
+    "version": "1.13.0"
   },
   "paths": {
     "/nodes/": {
@@ -64,6 +64,18 @@
                 "type": "string"
               },
               "title": "Tags"
+            }
+          },
+          {
+            "name": "system_tags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "System Tags"
             }
           },
           {
@@ -1004,6 +1016,83 @@
         }
       }
     },
+    "/nodes/{id}/system_tags": {
+      "put": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Update Node System Tags",
+        "operationId": "update_node_system_tags",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Node"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/nodes/{id}/reset_auth": {
       "put": {
         "tags": [
@@ -1173,6 +1262,66 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nodes/{id}/reset_blastaccess_cert": {
+      "put": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": " Reset Blastaccess Cert",
+        "operationId": "reset_node_blastaccess_cert",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "400": {
             "description": "Bad Request",
@@ -1416,6 +1565,18 @@
                 "type": "string"
               },
               "title": "Tags"
+            }
+          },
+          {
+            "name": "system_tags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "System Tags"
             }
           },
           {
@@ -2136,6 +2297,143 @@
         }
       }
     },
+    "/endpoints/{id}/system_tags": {
+      "put": {
+        "tags": [
+          "Endpoints"
+        ],
+        "summary": "Update Endpoint System Tags",
+        "operationId": "update_endpoint_system_tags",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Endpoint"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/endpoints/{id}/reset_blastaccess_cert": {
+      "put": {
+        "tags": [
+          "Endpoints"
+        ],
+        "summary": " Reset Blastaccess Cert",
+        "operationId": "reset_endpoint_blastaccess_cert",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/endpoints/{id}/groups": {
       "get": {
         "tags": [
@@ -2333,6 +2631,18 @@
                 "type": "string"
               },
               "title": "Tags"
+            }
+          },
+          {
+            "name": "system_tags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "System Tags"
             }
           },
           {
@@ -2953,6 +3263,83 @@
         }
       }
     },
+    "/groups/{id}/system_tags": {
+      "put": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Update Group System Tags",
+        "operationId": "update_group_system_tags",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Group"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/groups/{id}/users": {
       "put": {
         "tags": [
@@ -3476,6 +3863,18 @@
                 "type": "string"
               },
               "title": "Tags"
+            }
+          },
+          {
+            "name": "system_tags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "System Tags"
             }
           }
         ],
@@ -4075,6 +4474,83 @@
         }
       }
     },
+    "/services/{id}/system_tags": {
+      "put": {
+        "tags": [
+          "Services"
+        ],
+        "summary": "Update Service System Tags",
+        "operationId": "update_service_system_tags",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Service"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/policies/": {
       "get": {
         "tags": [
@@ -4122,6 +4598,18 @@
                 "type": "string"
               },
               "title": "Tags"
+            }
+          },
+          {
+            "name": "system_tags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "System Tags"
             }
           },
           {
@@ -4775,6 +5263,83 @@
         }
       }
     },
+    "/policies/{id}/system_tags": {
+      "put": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "Update Policy System Tags",
+        "operationId": "update_policy_system_tags",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Policy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/egress_policies/": {
       "get": {
         "tags": [
@@ -4822,6 +5387,18 @@
                 "type": "string"
               },
               "title": "Tags"
+            }
+          },
+          {
+            "name": "system_tags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "System Tags"
             }
           },
           {
@@ -5476,6 +6053,83 @@
         }
       }
     },
+    "/egress_policies/{id}/system_tags": {
+      "put": {
+        "tags": [
+          "Egress Policies"
+        ],
+        "summary": "Update Egresspolicy System Tags",
+        "operationId": "update_egress_policy_system_tags",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EgressPolicy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/proxies/": {
       "get": {
         "tags": [
@@ -5523,6 +6177,18 @@
                 "type": "string"
               },
               "title": "Tags"
+            }
+          },
+          {
+            "name": "system_tags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "System Tags"
             }
           },
           {
@@ -6170,6 +6836,83 @@
         }
       }
     },
+    "/proxies/{id}/system_tags": {
+      "put": {
+        "tags": [
+          "Proxies"
+        ],
+        "summary": "Update Proxy System Tags",
+        "operationId": "update_proxy_system_tags",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proxy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api_keys/": {
       "get": {
         "tags": [
@@ -6217,6 +6960,18 @@
                 "type": "string"
               },
               "title": "Tags"
+            }
+          },
+          {
+            "name": "system_tags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "System Tags"
             }
           },
           {
@@ -6948,6 +7703,83 @@
         }
       }
     },
+    "/api_keys/{id}/system_tags": {
+      "put": {
+        "tags": [
+          "APIKeys"
+        ],
+        "summary": "Update Apikey System Tags",
+        "operationId": "update_api_key_system_tags",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIKey"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/event_log_rules/": {
       "get": {
         "tags": [
@@ -6995,6 +7827,18 @@
                 "type": "string"
               },
               "title": "Tags"
+            }
+          },
+          {
+            "name": "system_tags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "System Tags"
             }
           },
           {
@@ -7570,6 +8414,83 @@
         ],
         "summary": "Update Eventlogrule Tags",
         "operationId": "update_event_log_rule_tags",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventLogRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/event_log_rules/{id}/system_tags": {
+      "put": {
+        "tags": [
+          "Event Log Rules"
+        ],
+        "summary": "Update Eventlogrule System Tags",
+        "operationId": "update_event_log_rule_system_tags",
         "security": [
           {
             "HTTPBearer": []
@@ -8509,6 +9430,13 @@
             "type": "object",
             "title": "Tags"
           },
+          "system_tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "System Tags"
+          },
           "nodes": {
             "items": {
               "$ref": "#/components/schemas/Permission"
@@ -8592,6 +9520,7 @@
           "id",
           "name",
           "tags",
+          "system_tags",
           "nodes",
           "endpoints",
           "groups",
@@ -8736,6 +9665,13 @@
             "minLength": 1,
             "title": "Name"
           },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
           "nodes": {
             "items": {
               "$ref": "#/components/schemas/Permission"
@@ -8823,6 +9759,13 @@
             "type": "string",
             "minLength": 1,
             "title": "Name"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
           },
           "nodes": {
             "items": {
@@ -9211,13 +10154,15 @@
         "enum": [
           "category",
           "tag",
-          "priority"
+          "priority",
+          "entity_tag"
         ],
         "title": "ConditionType",
         "x-enum-varnames": [
           "CAT",
           "TAG",
-          "PRIO"
+          "PRIO",
+          "ENTITY_TAG"
         ]
       },
       "ConsolePasswordSettings": {
@@ -9305,6 +10250,13 @@
             "minLength": 1,
             "title": "Name"
           },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
           "enabled": {
             "type": "boolean",
             "title": "Enabled"
@@ -9374,6 +10326,13 @@
             "type": "object",
             "title": "Tags"
           },
+          "system_tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "System Tags"
+          },
           "enabled": {
             "type": "boolean",
             "title": "Enabled"
@@ -9421,6 +10380,7 @@
           "id",
           "name",
           "tags",
+          "system_tags",
           "enabled",
           "allow_all_dns_queries",
           "services",
@@ -9524,6 +10484,13 @@
             "minLength": 1,
             "title": "Name"
           },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
           "enabled": {
             "type": "boolean",
             "title": "Enabled"
@@ -9609,6 +10576,13 @@
             "type": "object",
             "title": "Tags"
           },
+          "system_tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "System Tags"
+          },
           "address": {
             "anyOf": [
               {
@@ -9672,6 +10646,7 @@
           "id",
           "name",
           "tags",
+          "system_tags",
           "address",
           "node_id",
           "enabled",
@@ -9785,7 +10760,6 @@
         "type": "object",
         "required": [
           "name",
-          "address",
           "node_id",
           "enabled"
         ],
@@ -9855,6 +10829,13 @@
             "type": "string",
             "minLength": 1,
             "title": "Name"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
           },
           "address": {
             "anyOf": [
@@ -9955,6 +10936,13 @@
             "minLength": 1,
             "title": "Name"
           },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
           "address": {
             "anyOf": [
               {
@@ -10036,6 +11024,13 @@
             "type": "object",
             "title": "Tags"
           },
+          "system_tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "System Tags"
+          },
           "enabled": {
             "type": "boolean",
             "title": "Enabled"
@@ -10084,6 +11079,7 @@
           "id",
           "name",
           "tags",
+          "system_tags",
           "enabled",
           "conditions",
           "actions",
@@ -10196,6 +11192,13 @@
             "type": "string",
             "title": "Name"
           },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
           "enabled": {
             "type": "boolean",
             "title": "Enabled"
@@ -10247,6 +11250,13 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
           },
           "enabled": {
             "type": "boolean",
@@ -10478,6 +11488,13 @@
             "type": "object",
             "title": "Tags"
           },
+          "system_tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "System Tags"
+          },
           "idp_provisioned": {
             "type": "boolean",
             "title": "Idp Provisioned"
@@ -10513,6 +11530,7 @@
           "id",
           "name",
           "tags",
+          "system_tags",
           "idp_provisioned",
           "idp_externalid",
           "endpoints",
@@ -10671,6 +11689,13 @@
             "minLength": 1,
             "title": "Name"
           },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
           "endpoints": {
             "anyOf": [
               {
@@ -10733,6 +11758,13 @@
             "type": "string",
             "minLength": 1,
             "title": "Name"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
           },
           "endpoints": {
             "anyOf": [
@@ -10968,6 +12000,10 @@
           "telemetry_signature": {
             "type": "string",
             "title": "Telemetry Signature"
+          },
+          "blastaccess_csr": {
+            "type": "string",
+            "title": "Blastaccess Csr"
           }
         },
         "type": "object",
@@ -10975,7 +12011,8 @@
           "network_id",
           "orchestrators",
           "telemetry",
-          "telemetry_signature"
+          "telemetry_signature",
+          "blastaccess_csr"
         ],
         "title": "LicenseRequest"
       },
@@ -11060,6 +12097,13 @@
             },
             "type": "object",
             "title": "Tags"
+          },
+          "system_tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "System Tags"
           },
           "public_key": {
             "anyOf": [
@@ -11202,6 +12246,7 @@
           "id",
           "name",
           "tags",
+          "system_tags",
           "public_key",
           "node_type",
           "endpoint_mode",
@@ -11523,6 +12568,13 @@
             "minLength": 1,
             "title": "Name"
           },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
           "public_key": {
             "anyOf": [
               {
@@ -11646,6 +12698,13 @@
             "type": "string",
             "minLength": 1,
             "title": "Name"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
           },
           "public_key": {
             "anyOf": [
@@ -11828,6 +12887,13 @@
             "minLength": 1,
             "title": "Name"
           },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
           "enabled": {
             "type": "boolean",
             "title": "Enabled"
@@ -11888,6 +12954,13 @@
             "type": "object",
             "title": "Tags"
           },
+          "system_tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "System Tags"
+          },
           "enabled": {
             "type": "boolean",
             "title": "Enabled"
@@ -11926,6 +12999,7 @@
           "id",
           "name",
           "tags",
+          "system_tags",
           "enabled",
           "log",
           "from_groups",
@@ -12000,6 +13074,13 @@
             "minLength": 1,
             "title": "Name"
           },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
           "enabled": {
             "type": "boolean",
             "title": "Enabled"
@@ -12051,6 +13132,13 @@
             "type": "string",
             "minLength": 1,
             "title": "Name"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
           },
           "proxy_port": {
             "type": "integer",
@@ -12110,6 +13198,13 @@
             "type": "object",
             "title": "Tags"
           },
+          "system_tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "System Tags"
+          },
           "proxy_port": {
             "type": "integer",
             "title": "Proxy Port"
@@ -12144,6 +13239,7 @@
           "id",
           "name",
           "tags",
+          "system_tags",
           "proxy_port",
           "domains",
           "groups",
@@ -12214,6 +13310,13 @@
             "minLength": 1,
             "title": "Name"
           },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
           "proxy_port": {
             "type": "integer",
             "exclusiveMaximum": 25000.0,
@@ -12250,6 +13353,13 @@
       },
       "RemoteDesktopPermissions": {
         "properties": {
+          "control_access": {
+            "$ref": "#/components/schemas/RemoteDesktopResourcePermission",
+            "default": {
+              "audience": "all_users",
+              "group_ids": []
+            }
+          },
           "clipboard_access": {
             "$ref": "#/components/schemas/RemoteDesktopResourcePermission",
             "default": {
@@ -12274,6 +13384,7 @@
         },
         "type": "object",
         "required": [
+          "control_access",
           "clipboard_access",
           "download_access",
           "upload_access"
@@ -12407,6 +13518,13 @@
             "type": "object",
             "title": "Tags"
           },
+          "system_tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "System Tags"
+          },
           "protocols": {
             "items": {
               "$ref": "#/components/schemas/ServiceProtocol"
@@ -12421,6 +13539,7 @@
           "id",
           "name",
           "tags",
+          "system_tags",
           "protocols"
         ],
         "title": "Service"
@@ -12485,6 +13604,13 @@
             "minLength": 1,
             "title": "Name"
           },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
           "protocols": {
             "items": {
               "$ref": "#/components/schemas/ServiceProtocol"
@@ -12503,6 +13629,13 @@
             "type": "string",
             "minLength": 1,
             "title": "Name"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
           },
           "protocols": {
             "items": {
@@ -12623,6 +13756,10 @@
               },
               "default_permissions": {
                 "clipboard_access": {
+                  "audience": "all_users",
+                  "group_ids": []
+                },
+                "control_access": {
                   "audience": "all_users",
                   "group_ids": []
                 },
@@ -13057,6 +14194,7 @@
           "Location",
           "Request",
           "Status",
+          "Remote Desktop",
           "Console",
           "DHCP",
           "Firmware",
@@ -13070,6 +14208,7 @@
           "LOCATION",
           "REQUEST",
           "STATUS",
+          "REMOTE_DESKTOP",
           "CONSOLE",
           "DHCP",
           "FIRMWARE",

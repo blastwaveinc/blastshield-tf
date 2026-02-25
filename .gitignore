@@ -35,6 +35,7 @@ __pycache__/
 *.pyc
 .venv/
 
-# Generated code (run generate.py to regenerate)
+# Generated code (run make generate to regenerate)
 internal/provider/generated/
-internal/provider/provider.go
+internal/provider/v[0-9]*/
+internal/provider/versionimports/

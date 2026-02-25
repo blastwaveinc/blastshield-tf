@@ -20,6 +20,7 @@ Generates Go code for a Terraform provider from an OpenAPI specification.
 Uses Jinja2 templates for code generation.
 """
 
+import argparse
 import json
 import os
 import re
@@ -30,8 +31,10 @@ from jinja2 import Environment, FileSystemLoader
 # Configuration - skip these tags/resources
 SKIP_TAGS = {"API Keys", "Audit", "APIKeys"}  # API keys don't make sense in Terraform
 
-# Output directory
-OUTPUT_DIR = "internal/provider/generated"
+# Defaults
+DEFAULT_SPEC = "openapi.json"
+DEFAULT_OUTPUT_DIR = "internal/provider/generated"
+DEFAULT_PACKAGE = "generated"
 TEMPLATES_DIR = "codegen-templates"
 
 # =============================================================================
@@ -432,14 +435,26 @@ def find_resources(spec: dict) -> list[ResourceInfo]:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Generate Terraform provider code from OpenAPI spec")
+    parser.add_argument("--spec", default=DEFAULT_SPEC, help="Path to OpenAPI spec JSON file")
+    parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR, help="Output directory for generated Go code")
+    parser.add_argument("--package", default=DEFAULT_PACKAGE, help="Go package name for generated code")
+    args = parser.parse_args()
+
+    spec_path = args.spec
+    output_dir = args.output_dir
+    package_name = args.package
+
     # Load OpenAPI spec
-    with open("openapi.json") as f:
+    with open(spec_path) as f:
         spec = json.load(f)
+
+    api_version = spec.get("info", {}).get("version", "unknown")
 
     # Find resources
     resources = find_resources(spec)
 
-    print(f"Found {len(resources)} resources:")
+    print(f"Found {len(resources)} resources (API version {api_version}, package {package_name}):")
     for r in resources:
         print(f"  - {r.name} ({r.path})")
 
@@ -451,7 +466,7 @@ def main():
     )
 
     # Create output directory
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
     # Collect nested types for types.go
     nested_types = {}
@@ -465,14 +480,20 @@ def main():
                 if f.nested_ref not in nested_types:
                     nested_types[f.nested_ref] = f.nested_fields
 
+    # Check if resources have tags (for test generation)
+    for r in resources:
+        r.has_tags = any(f.json_name == "tags" for f in r.create_fields)
+
     # Generate shared files
     has_groups = any(r.has_groups for r in resources)
     generated_files = [
-        ("schemas.go.j2", os.path.join(OUTPUT_DIR, "schemas.go"), {"resources": resources}),
-        ("types.go.j2", os.path.join(OUTPUT_DIR, "types.go"), {"resources": resources, "nested_types": nested_types}),
-        ("client.go.j2", os.path.join(OUTPUT_DIR, "client.go"), {}),
-        ("helpers.go.j2", os.path.join(OUTPUT_DIR, "helpers.go"), {"has_groups": has_groups}),
-        ("provider.go.j2", "internal/provider/provider.go", {"resources": resources}),
+        ("schemas.go.j2", os.path.join(output_dir, "schemas.go"), {"resources": resources, "package_name": package_name}),
+        ("types.go.j2", os.path.join(output_dir, "types.go"), {"resources": resources, "nested_types": nested_types, "package_name": package_name}),
+        ("client.go.j2", os.path.join(output_dir, "client.go"), {"package_name": package_name}),
+        ("helpers.go.j2", os.path.join(output_dir, "helpers.go"), {"has_groups": has_groups, "package_name": package_name}),
+        ("register.go.j2", os.path.join(output_dir, "register.go"), {"resources": resources, "api_version": api_version, "package_name": package_name}),
+        ("test_helpers.go.j2", os.path.join(output_dir, "test_helpers_test.go"), {"package_name": package_name}),
+        ("resource_test.go.j2", os.path.join(output_dir, "resources_test.go"), {"resources": resources, "package_name": package_name}),
     ]
     for template_name, output_path, context in generated_files:
         template = env.get_template(template_name)
@@ -513,8 +534,9 @@ def main():
             id_value_method=id_value_method,
             id_format=id_format,
             id_set=id_set,
+            package_name=package_name,
         )
-        path = os.path.join(OUTPUT_DIR, f"{r.tf_name}_resource.go")
+        path = os.path.join(output_dir, f"{r.tf_name}_resource.go")
         with open(path, "w") as f:
             f.write(content)
         print(f"Generated {path}")
@@ -525,13 +547,14 @@ def main():
             resource=r,
             id_value_method=id_value_method,
             id_format=id_format,
+            package_name=package_name,
         )
-        path = os.path.join(OUTPUT_DIR, f"{r.tf_name}_data_source.go")
+        path = os.path.join(output_dir, f"{r.tf_name}_data_source.go")
         with open(path, "w") as f:
             f.write(content)
         print(f"Generated {path}")
 
-    print("\nDone! Generated files are in:", OUTPUT_DIR)
+    print("\nDone! Generated files are in:", output_dir)
 
 
 if __name__ == "__main__":
