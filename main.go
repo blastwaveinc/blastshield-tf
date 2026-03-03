@@ -44,7 +44,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/blastwave/blastshield",
+		Address: "registry.terraform.io/blastwaveinc/blastshield",
 		Debug:   debug,
 	}
 

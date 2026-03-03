@@ -1,5 +1,5 @@
 HOSTNAME=registry.terraform.io
-NAMESPACE=blastwave
+NAMESPACE=blastwaveinc
 NAME=blastshield
 BINARY=terraform-provider-${NAME}
 VERSION=1.13.0
