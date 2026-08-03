@@ -7,7 +7,28 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	resourceschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/blastwaveinc/terraform-provider-blastshield/internal/planmods"
+)
+
+// Keep plan-modifier imports referenced even when a spec version emits no
+// field of a given type.
+var (
+	_ = boolplanmodifier.UseStateForUnknown
+	_ = int64planmodifier.UseStateForUnknown
+	_ = listplanmodifier.UseStateForUnknown
+	_ = mapplanmodifier.UseStateForUnknown
+	_ = setplanmodifier.UseStateForUnknown
+	_ = stringplanmodifier.UseStateForUnknown
+	_ = planmods.PreserveStateWhenUnconfigured
 )
 
 {% for resource in resources %}
@@ -82,8 +103,28 @@ func {{ resource.name }}ResourceSchema(ctx context.Context) resourceschema.Schem
 {% elif field.computed and field.optional %}
 				Optional: true,
 				Computed: true,
+{# Optional+Computed with null config must keep prior state — including
+   null — or the framework plans them unknown forever (the API returns
+   null for unset fields, so UseStateForUnknown cannot cover this). #}
+{% if field.is_list %}
+				PlanModifiers: []planmodifier.Set{planmods.PreserveStateWhenUnconfigured()},
+{% elif field.is_map %}
+				PlanModifiers: []planmodifier.Map{planmods.PreserveStateWhenUnconfigured()},
+{% else %}
+				PlanModifiers: []planmodifier.{{ field.tf_type }}{planmods.PreserveStateWhenUnconfigured()},
+{% endif %}
 {% elif field.computed %}
 				Computed: true,
+{# Pure-computed values are stable across in-place updates; without
+   UseStateForUnknown every update marks them (including id) unknown,
+   cascading "(known after apply)" through referencing resources. #}
+{% if field.is_list %}
+				PlanModifiers: []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+{% elif field.is_map %}
+				PlanModifiers: []planmodifier.Map{mapplanmodifier.UseStateForUnknown()},
+{% else %}
+				PlanModifiers: []planmodifier.{{ field.tf_type }}{ {{ field.tf_type | lower }}planmodifier.UseStateForUnknown() },
+{% endif %}
 {% endif %}
 {% if field.sensitive %}
 				Sensitive: true,
@@ -96,13 +137,19 @@ func {{ resource.name }}ResourceSchema(ctx context.Context) resourceschema.Schem
 				Computed: true,
 				Sensitive: true,
 				Description: "Base64-encoded JSON of the POST response (contains registration info).",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 {% endif %}
 {% if resource.has_groups %}
 			"groups": resourceschema.ListNestedAttribute{
 				Optional: true,
 				Computed: true,
-				Description: "Group memberships with optional expiry.",
+				Description: "Group memberships with optional expiry. Omit to leave membership management to blastshield_group resources; the server-reflected value is then preserved without drift.",
+{# Membership is also reflected server-side when blastshield_group resources
+   add this entity as a member. Without preserving prior state on null
+   config, that reflected state diffs on every plan and the resulting
+   update fights the group for ownership of the membership. #}
+				PlanModifiers: []planmodifier.List{planmods.PreserveStateWhenUnconfigured()},
 				NestedObject: resourceschema.NestedAttributeObject{
 					Attributes: map[string]resourceschema.Attribute{
 						"id": resourceschema.Int64Attribute{
